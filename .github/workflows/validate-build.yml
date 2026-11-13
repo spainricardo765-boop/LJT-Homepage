@@ -31,14 +31,28 @@ jobs:
         run: bundle exec jekyll build --baseurl "/LJT-Homepage" --trace
         env:
           JEKYLL_ENV: production
-      - name: Show key output
+      - name: Verify generated output
         run: |
-          ls -la _site/
-          echo "--- index.html (head) ---"
-          head -c 3000 _site/index.html
-          echo ""
-          echo "--- publications index ---"
-          head -c 3000 _site/publications/index.html
-          echo ""
-          echo "--- search for placeholder strings ---"
-          grep -rn "Paper Title Number" _site/ || echo "no placeholder publication titles found"
+          set -e
+          echo "== generated pages =="
+          find _site -name "*.html" | sort
+          echo
+          echo "== publication links in index.html =="
+          grep -o 'href="[^"]*publication[^"]*"' _site/index.html | sort -u
+          echo
+          echo "== placeholder leftovers =="
+          if grep -rn "Paper Title Number" _site/ ; then echo "FOUND PLACEHOLDER"; exit 1; else echo "none"; fi
+          if grep -rn "Your Name" _site/ ; then echo "FOUND PLACEHOLDER NAME"; exit 1; else echo "none"; fi
+          if grep -rn "academicpages.github.io" _site/index.html ; then echo "FOUND TEMPLATE URL"; exit 1; else echo "none"; fi
+          echo
+          echo "== sidebar author block =="
+          grep -o 'author__[a-z]*"[^>]*>[^<]*' _site/index.html | head -40
+          echo
+          echo "== title/head =="
+          grep -o '<title>[^<]*</title>' _site/index.html
+          echo
+          echo "== publications page content =="
+          grep -o '\(Preprints\|Conference Papers\|SynLogic\|Perception Bottleneck\|Universal Truthfulness\|In-Context Sharpness\|C-Eval\|Composing Parameter-Efficient\)[^<]*' _site/publications/index.html | sort -u
+          echo
+          echo "== number of generated publication pages =="
+          find _site/publication -maxdepth 2 -name index.html | sort
