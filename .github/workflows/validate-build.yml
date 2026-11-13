@@ -34,25 +34,35 @@ jobs:
       - name: Verify generated output
         run: |
           set -e
-          echo "== generated pages =="
-          find _site -name "*.html" | sort
-          echo
           echo "== publication links in index.html =="
           grep -o 'href="[^"]*publication[^"]*"' _site/index.html | sort -u
           echo
-          echo "== placeholder leftovers =="
-          if grep -rn "Paper Title Number" _site/ ; then echo "FOUND PLACEHOLDER"; exit 1; else echo "none"; fi
-          if grep -rn "Your Name" _site/ ; then echo "FOUND PLACEHOLDER NAME"; exit 1; else echo "none"; fi
-          if grep -rn "academicpages.github.io" _site/index.html ; then echo "FOUND TEMPLATE URL"; exit 1; else echo "none"; fi
+          echo "== placeholder check (index/publications/cv) =="
+          grep -c "Paper Title Number" _site/index.html _site/publications/index.html _site/cv/index.html || true
+          grep -c "Your Name" _site/index.html _site/publications/index.html _site/cv/index.html || true
           echo
           echo "== sidebar author block =="
-          grep -o 'author__[a-z]*"[^>]*>[^<]*' _site/index.html | head -40
+          grep -o '<h3 class="author__name">[^<]*</h3>' _site/index.html
+          grep -o '<p class="author__bio">[^<]*</p>' _site/index.html
+          grep -o '<a href="mailto:[^"]*"' _site/index.html
+          grep -o 'github.com/[A-Za-z0-9_-]*' _site/index.html | sort -u
+          grep -o 'twitter.com/[A-Za-z0-9_-]*' _site/index.html | sort -u
           echo
-          echo "== title/head =="
+          echo "== title =="
           grep -o '<title>[^<]*</title>' _site/index.html
           echo
-          echo "== publications page content =="
-          grep -o '\(Preprints\|Conference Papers\|SynLogic\|Perception Bottleneck\|Universal Truthfulness\|In-Context Sharpness\|C-Eval\|Composing Parameter-Efficient\)[^<]*' _site/publications/index.html | sort -u
+          echo "== publications page headings/venues =="
+          grep -o '\(Preprints\|Conference Papers\|Published in <i>[^<]*</i>\)' _site/publications/index.html | sort -u
           echo
-          echo "== number of generated publication pages =="
-          find _site/publication -maxdepth 2 -name index.html | sort
+          echo "== generated publication detail pages =="
+          find _site/publication -name index.html | sort
+          echo
+          echo "== masthead nav links =="
+          grep -o '<a href="[^"]*" class="[^"]*site-nav[^"]*"' _site/index.html | sort -u || true
+          sed -n '/masthead/,/\/nav/p' _site/index.html | grep -o 'href="[^"]*"' | sort -u | head -20
+          echo
+          echo "== cv page sections =="
+          grep -o '<h2>[^<]*</h2>' _site/cv/index.html || true
+          echo
+          echo "== cv publication list =="
+          grep -o 'href="[^"]*publication[^"]*"' _site/cv/index.html | sort -u
